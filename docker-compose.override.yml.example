@@ -1,0 +1,18 @@
+# Example override file for local development
+# Copy to docker-compose.override.yml and adjust as needed
+
+version: '3.8'
+
+services:
+  app:
+    # For local development without Traefik
+    ports:
+      - "8080:80"
+    # Disable Traefik labels for local dev
+    labels:
+      - "traefik.enable=false"
+
+networks:
+  # Create a dummy external network for local dev
+  traefik_proxy:
+    external: false

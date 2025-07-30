@@ -1,0 +1,59 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker volumes (if stored locally during development)
+/volumes/
+/data/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# Logs
+*.log
+logs/
+/var/log/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Docker override files (for local development)
+docker-compose.override.yml
+
+# Certificates (if stored locally)
+*.pem
+*.key
+*.crt
+*.cer
+
+# Sensitive configuration
+secrets/
+credentials/
+
+# Test files
+test/
+tests/
+*.test
+
+# Documentation build
+docs/_build/
+docs/.doctrees/
