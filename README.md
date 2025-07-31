@@ -14,7 +14,7 @@ This repository contains the Docker Compose configuration for deploying Nextclou
 
 1. **Traefik** must be running with a network named `traefik_proxy`
 2. **Mailcow** must be installed and accessible
-3. **S3 bucket** created and accessible
+3. **S3 bucket** created and accessible (automatically created if using the main Terraform deployment)
 4. **Domain** configured with DNS pointing to your server
 
 ## Deployment
@@ -39,6 +39,8 @@ Required configuration:
 - `DB_PASSWORD`, `DB_ROOT_PASSWORD`: Secure database passwords
 - `NEXTCLOUD_ADMIN_PASSWORD`: Admin password for Nextcloud
 - `S3_*`: Your S3 configuration for object storage
+  - For Pilvio S3: endpoint is `s3.pilw.io`, region is `eu-west-1`
+  - Credentials are auto-generated if using the main Terraform deployment
 - `REDIS_PASSWORD`: Secure Redis password
 - `SMTP_*`: Mailcow SMTP configuration (see below)
 
