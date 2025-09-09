@@ -29,8 +29,8 @@ This repository is automatically used when deploying via the main infrastructure
 
 ```bash
 # Clone the main infrastructure repository
-git clone https://github.com/kkiisler/etky-mailcow.git
-cd etky-mailcow
+git clone https://github.com/kkiisler/digikontor
+cd digikontor
 
 # Deploy using Terraform and Ansible
 cd terraform
