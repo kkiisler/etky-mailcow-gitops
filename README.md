@@ -4,7 +4,7 @@ This repository contains the Docker Compose configuration for deploying Nextclou
 
 ## Overview
 
-This GitOps repository is primarily used by the [etky-mailcow](https://github.com/kkiisler/etky-mailcow) Ansible automation for deploying Nextcloud. While it can be used for manual deployments, it's designed to work seamlessly with the automated infrastructure provisioning.
+This GitOps repository is primarily used by the [digikontor](https://github.com/kkiisler/digikontor) Ansible automation for deploying Nextcloud. While it can be used for manual deployments, it's designed to work seamlessly with the automated infrastructure provisioning.
 
 ## Architecture
 
