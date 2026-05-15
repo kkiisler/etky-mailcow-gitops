@@ -12,6 +12,7 @@ This GitOps repository is primarily used by the [digikontor](https://github.com/
 - **Database**: MariaDB 10.11
 - **Cache**: Redis 7
 - **Storage**: S3-compatible object storage (Pilvio S3)
+- **Search**: Elasticsearch 8.17 (single-node, internal-only) for full-text search
 - **Email**: Integration with Mailcow SMTP
 - **Monitoring**: Python-based monitoring with Slack alerts
 - **Backup**: Automated S3 backups via unified backup system
@@ -22,6 +23,12 @@ This GitOps repository is primarily used by the [digikontor](https://github.com/
 2. **Mailcow** must be installed and accessible
 3. **S3 bucket** created and accessible (automatically created if using the main Terraform deployment)
 4. **Domain** configured with DNS pointing to your server
+5. **Host kernel parameter** `vm.max_map_count >= 262144` (required by Elasticsearch). Set permanently:
+   ```bash
+   echo "vm.max_map_count=262144" | sudo tee /etc/sysctl.d/99-elasticsearch.conf
+   sudo sysctl --system
+   ```
+6. **RAM** ≥ 6 GB recommended (Elasticsearch reserves a 1 GB heap; combined with Nextcloud + MariaDB + Redis the stack uses ~3.5 GB)
 
 ## Automated Deployment (Recommended)
 
@@ -195,6 +202,68 @@ docker compose exec -u www-data app php occ files:scan --all
 # Clean up
 docker compose exec -u www-data app php occ files:cleanup
 ```
+
+## Full-Text Search (FTS)
+
+The `elasticsearch` service in `docker-compose.yml` provides the search backend for Nextcloud's `fulltextsearch` + `files_fulltextsearch` apps. With this enabled, users can search inside file contents (PDFs, Office documents, plain text) — not only by filename.
+
+### What the compose change brings
+
+Adding the `elasticsearch` service means every fresh deployment of this stack will:
+- Start a single-node Elasticsearch 8.17 container (`nextcloud-elasticsearch`) with a 1 GB JVM heap
+- Reserve a persistent named volume `elasticsearch_data` for the search index
+- Expose the search engine **only on the internal `nextcloud_internal` network** (no external port, no authentication needed — security is gained from network isolation)
+
+### What is NOT yet automated
+
+The compose change provides the search engine. The following still has to be done **once per deployment** after `docker compose up -d`:
+
+1. **Install + enable the Elasticsearch connector app** in Nextcloud:
+   ```bash
+   docker exec -u www-data nextcloud-app php occ app:install fulltextsearch_elasticsearch
+   docker exec -u www-data nextcloud-app php occ app:enable  fulltextsearch_elasticsearch
+   ```
+   (The `fulltextsearch` and `files_fulltextsearch` apps are usually bundled with Nextcloud and only need enabling.)
+
+2. **Configure the platform and the ES endpoint**:
+   ```bash
+   docker exec -u www-data nextcloud-app php occ fulltextsearch:configure \
+     '{"search_platform":"OCA\\FullTextSearch_Elasticsearch\\Platform\\ElasticSearchPlatform"}'
+
+   docker exec -u www-data nextcloud-app php occ fulltextsearch_elasticsearch:configure \
+     '{"elastic_host":"http://elasticsearch:9200","elastic_index":"nextcloud"}'
+   ```
+
+3. **Verify the connection**:
+   ```bash
+   docker exec -u www-data nextcloud-app php occ fulltextsearch:test
+   ```
+   All steps should report `ok`.
+
+4. **Run the initial full index** (one-off; duration depends on file count and S3 latency — ~14 minutes for ~2500 documents in our reference deployment):
+   ```bash
+   docker exec -u www-data nextcloud-app php occ fulltextsearch:index
+   ```
+
+### Auto-indexing of new files
+
+Once configured, the `OCA\FullTextSearch\Cron\Index` background job is registered automatically. Nextcloud's normal cron (every 5 min in the Ansible deployment) drives incremental indexing — new and modified files appear in the search index on the next cron tick.
+
+For this to work, **Nextcloud must be in `cron` background mode**, not AJAX:
+```bash
+docker exec -u www-data nextcloud-app php occ background:job:mode
+# expected output: "cron"
+```
+
+### Resource impact
+
+- **RAM**: ~1.3 GB for the Elasticsearch container at idle (1 GB JVM heap + JVM overhead)
+- **Disk**: index size is roughly 10–20× the indexed text content. Our reference deployment (≈2 600 documents) produces a ~25 MB index.
+- **CPU**: bursty during indexing, negligible at rest
+
+### Disabling FTS
+
+If a deployment does not need full-text search, comment out or remove the `elasticsearch` service block (and the `elasticsearch_data` volume) before running `docker compose up`. The other services have no hard dependency on it.
 
 ## Integration with Mailcow
 
