@@ -152,7 +152,7 @@ services:
       - "traefik.http.routers.nextcloud.middlewares=nextcloud-dav,nextcloud-headers@docker"
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.3
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.18
     container_name: nextcloud-elasticsearch
     restart: always
     environment:
